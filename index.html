@@ -938,6 +938,47 @@ body {
 
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
+/* ===================== ONGLET CORAN ===================== */
+.surah-list { display:flex; flex-direction:column; }
+.surah-item {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 4px; border-bottom:1px solid var(--border);
+  cursor:pointer; border-radius:6px; transition:background 0.12s;
+}
+.surah-item:last-child { border-bottom:none; }
+.surah-item.checked { background:var(--gold-glow); }
+.surah-num {
+  font-family:'DM Mono',monospace; font-size:11px;
+  color:var(--text3); width:22px; text-align:right; flex-shrink:0;
+}
+.surah-name { flex:1; font-size:13px; color:var(--text2); }
+.surah-item.checked .surah-name { color:var(--text); }
+.surah-check {
+  width:20px; height:20px; border-radius:50%;
+  border:1.5px solid var(--border2); display:flex;
+  align-items:center; justify-content:center;
+  font-size:10px; color:transparent; flex-shrink:0; transition:all 0.15s;
+}
+.surah-item.checked .surah-check { background:var(--gold); border-color:var(--gold); color:#0a0800; }
+
+/* ===================== ONGLET STATS ===================== */
+.stat-sub { display:flex; gap:10px; margin-top:5px; font-size:10px; flex-wrap:wrap; }
+.stat-badge {
+  display:inline-block; padding:2px 8px; border-radius:20px;
+  font-size:10px; font-weight:700; letter-spacing:0.3px;
+}
+.stat-badge.strong { background:var(--green-dim); color:var(--green); }
+.stat-badge.medium { background:var(--orange-dim); color:var(--orange); }
+.stat-badge.weak   { background:var(--red-dim); color:var(--red); }
+.stat-bar-pct { font-family:'DM Mono',monospace; font-size:12px; }
+.stat-bar-pct.strong { color:var(--green); }
+.stat-bar-pct.medium { color:var(--orange); }
+.stat-bar-pct.weak   { color:var(--red); }
+.bar-fill.red { background:linear-gradient(90deg,#9e3d3d,var(--red)); }
+
+/* 6 onglets nav */
+.nav-tabs .nav-tab { font-size:11.5px; padding:10px 2px; }
+
 </style>
 </head>
 <body>
@@ -959,6 +1000,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
     <button class="nav-tab" onclick="showView('semaine')">Semaine</button>
     <button class="nav-tab" onclick="showView('mois')">Mois</button>
     <button class="nav-tab" onclick="showView('annee')">Année</button>
+    <button class="nav-tab" onclick="showView('coran')">Coran</button>
+    <button class="nav-tab" onclick="showView('stats')">Stats</button>
   </nav>
 </div>
 
@@ -1046,6 +1089,22 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   <div id="yearStats"></div>
 </div>
 
+<!-- VUE CORAN -->
+<div class="view" id="view-coran">
+  <div class="month-selector">
+    <button class="month-nav-btn" onclick="changeQuranMonth(-1)">‹</button>
+    <div class="month-title" id="quranMonthTitle"></div>
+    <button class="month-nav-btn" onclick="changeQuranMonth(1)">›</button>
+  </div>
+  <div id="quranProgress"></div>
+  <div id="surahGrid"></div>
+</div>
+
+<!-- VUE STATS -->
+<div class="view" id="view-stats">
+  <div id="statsContent"></div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1111,6 +1170,32 @@ const CONFIG = {
 
   months_fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
   days_fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+
+  surahs: [
+    'Al-Fatiha','Al-Baqara','Ali \'Imran','An-Nisa','Al-Ma\'ida',
+    'Al-An\'am','Al-A\'raf','Al-Anfal','At-Tawba','Yunus',
+    'Hud','Yusuf','Ar-Ra\'d','Ibrahim','Al-Hijr',
+    'An-Nahl','Al-Isra','Al-Kahf','Maryam','Ta-Ha',
+    'Al-Anbiya','Al-Hajj','Al-Mu\'minun','An-Nur','Al-Furqan',
+    'Ash-Shu\'ara','An-Naml','Al-Qasas','Al-\'Ankabut','Ar-Rum',
+    'Luqman','As-Sajda','Al-Ahzab','Saba','Fatir',
+    'Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir',
+    'Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhan','Al-Jathiya',
+    'Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf',
+    'Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman',
+    'Al-Waqi\'a','Al-Hadid','Al-Mujadila','Al-Hashr','Al-Mumtahana',
+    'As-Saff','Al-Jumu\'a','Al-Munafiqun','At-Taghabun','At-Talaq',
+    'At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqa','Al-Ma\'arij',
+    'Nuh','Al-Jinn','Al-Muzzammil','Al-Muddaththir','Al-Qiyama',
+    'Al-Insan','Al-Mursalat','An-Naba','An-Nazi\'at','\'Abasa',
+    'At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj',
+    'At-Tariq','Al-A\'la','Al-Ghashiya','Al-Fajr','Al-Balad',
+    'Ash-Shams','Al-Layl','Ad-Duha','Ash-Sharh','At-Tin',
+    'Al-\'Alaq','Al-Qadr','Al-Bayyina','Az-Zalzala','Al-\'Adiyat',
+    'Al-Qari\'a','At-Takathur','Al-\'Asr','Al-Humaza','Al-Fil',
+    'Quraysh','Al-Ma\'un','Al-Kawthar','Al-Kafirun','An-Nasr',
+    'Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas',
+  ],
 };
 
 // ============================================================
@@ -1120,6 +1205,11 @@ let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let activeView = 'jour';
 let data = {};
+
+// Quran state
+let quranYear = new Date().getFullYear();
+let quranMonth = new Date().getMonth();
+let quranData = {};
 
 // ============================================================
 // STORAGE
@@ -1222,6 +1312,8 @@ function renderCurrentView() {
   else if (activeView === 'semaine') { renderWeekList(); }
   else if (activeView === 'mois') { renderMonth(); }
   else if (activeView === 'annee') { renderYear(); }
+  else if (activeView === 'coran') { renderCoran(); }
+  else if (activeView === 'stats') { renderStats(); }
 }
 
 // ============================================================
@@ -2061,15 +2153,193 @@ function resetYear() {
 }
 
 // ============================================================
+// ONGLET CORAN
+// ============================================================
+function loadQuranData() {
+  const raw = localStorage.getItem('rd_quran_' + quranYear);
+  if (raw) { try { quranData = JSON.parse(raw); } catch(e) { quranData = {}; } }
+  else quranData = {};
+}
+
+function saveQuranData() {
+  localStorage.setItem('rd_quran_' + quranYear, JSON.stringify(quranData));
+}
+
+function changeQuranMonth(delta) {
+  quranMonth += delta;
+  if (quranMonth < 0) { quranMonth = 11; quranYear--; loadQuranData(); }
+  else if (quranMonth > 11) { quranMonth = 0; quranYear++; loadQuranData(); }
+  renderCoran();
+}
+
+function toggleSurah(num) {
+  const mk = quranYear + '-' + String(quranMonth + 1).padStart(2, '0');
+  if (!quranData[mk]) quranData[mk] = {};
+  if (quranData[mk][num]) delete quranData[mk][num];
+  else quranData[mk][num] = true;
+  saveQuranData();
+  renderCoran();
+}
+
+function renderCoran() {
+  const mk = quranYear + '-' + String(quranMonth + 1).padStart(2, '0');
+  const monthSurahs = quranData[mk] || {};
+  const count = Object.keys(monthSurahs).length;
+  const pct = Math.round(count / 114 * 100);
+
+  document.getElementById('quranMonthTitle').textContent =
+    CONFIG.months_fr[quranMonth] + ' ' + quranYear;
+
+  document.getElementById('quranProgress').innerHTML = `
+    <div class="score-card" style="margin-bottom:16px">
+      <div class="score-big">${count}<span class="score-max">/114</span></div>
+      <div class="score-label">Sourates lues ce mois</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('surahGrid').innerHTML =
+    '<div class="section-label">Sourates du Coran</div>' +
+    '<div class="card"><div class="surah-list">' +
+    CONFIG.surahs.map((s, i) => {
+      const num = i + 1;
+      const checked = !!monthSurahs[num];
+      return `<div class="surah-item${checked ? ' checked' : ''}" onclick="toggleSurah(${num})">
+        <div class="surah-num">${num}</div>
+        <div class="surah-name">${s}</div>
+        <div class="surah-check">${checked ? '✓' : ''}</div>
+      </div>`;
+    }).join('') +
+    '</div></div>';
+}
+
+// ============================================================
+// ONGLET STATS
+// ============================================================
+function renderStats() {
+  const today = new Date();
+  const isCurrentYear = currentYear === today.getFullYear();
+
+  let loggedDays = 0;
+  const habitCounts = {};
+  CONFIG.habits.forEach(h => {
+    habitCounts[h.id] = h.type === 'counter' ? { days: 0, total: 0 } : 0;
+  });
+  const prayerCounts = {};
+  CONFIG.prayers.forEach(p => {
+    prayerCounts[p.id] = { mosque: 0, home: 0, late: 0, none: 0 };
+  });
+
+  for (let m = 0; m < 12; m++) {
+    for (let d = 1; d <= daysInMonth(currentYear, m); d++) {
+      if (isCurrentYear && new Date(currentYear, m, d) > today) continue;
+      const key = dateStr(currentYear, m, d);
+      const day = data[key];
+      if (!day) continue;
+      loggedDays++;
+      CONFIG.habits.forEach(h => {
+        const val = day.habits?.[h.id];
+        if (h.type === 'counter') {
+          if ((val || 0) > 0) { habitCounts[h.id].days++; habitCounts[h.id].total += val; }
+        } else {
+          if (val) habitCounts[h.id]++;
+        }
+      });
+      CONFIG.prayers.forEach(p => {
+        const status = day.prayers?.[p.id]?.status || 'none';
+        prayerCounts[p.id][status]++;
+      });
+    }
+  }
+
+  if (loggedDays === 0) {
+    document.getElementById('statsContent').innerHTML =
+      '<div class="empty-state"><div class="icon">📊</div>Aucune donnée pour ' + currentYear + '</div>';
+    return;
+  }
+
+  const pct = n => Math.round(n / loggedDays * 100);
+  const fillCls = p => p >= 70 ? 'green' : p >= 40 ? 'orange' : 'red';
+  const badgeCls = p => p >= 70 ? 'strong' : p >= 40 ? 'medium' : 'weak';
+  const txtCls = p => p >= 70 ? 'strong' : p >= 40 ? 'medium' : 'weak';
+
+  let html = `
+    <div class="score-card" style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Bilan ${currentYear}</div>
+      <div style="font-size:22px;font-weight:700;color:var(--gold2);font-family:'DM Mono',monospace">${loggedDays}<span style="font-size:13px;color:var(--text3);font-family:'DM Sans',sans-serif"> jours tracés</span></div>
+    </div>
+    <div class="section-label">🕌 Prières</div>
+    <div class="card" style="margin-bottom:16px">
+  `;
+
+  CONFIG.prayers.forEach(p => {
+    const cnt = prayerCounts[p.id];
+    const mPct = pct(cnt.mosque);
+    const hPct = pct(cnt.home);
+    const lPct = pct(cnt.late);
+    const nPct = pct(cnt.none);
+    const fc = fillCls(mPct);
+    const bc = badgeCls(mPct);
+    html += `
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-label">${p.name}</span>
+          <span class="stat-badge ${bc}">${mPct}%&nbsp;mosquée</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill ${fc}" style="width:${mPct}%"></div></div>
+        <div class="stat-sub">
+          <span style="color:var(--green)">🕌 ${mPct}%</span>
+          <span style="color:var(--orange)">🏠 ${hPct}%</span>
+          ${lPct > 0 ? `<span style="color:var(--text3)">⏱ ${lPct}%</span>` : ''}
+          ${nPct > 0 ? `<span style="color:var(--red)">✗ ${nPct}%</span>` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div><div class="section-label">📿 Habitudes</div><div class="card">`;
+
+  const habitItems = CONFIG.habits.map(h => {
+    if (h.type === 'counter') {
+      const { days, total } = habitCounts[h.id];
+      return { name: h.name, p: pct(days), extra: days > 0 ? (total / days).toFixed(1) + ' p/j' : '' };
+    }
+    return { name: h.name, p: pct(habitCounts[h.id]), extra: '' };
+  }).sort((a, b) => b.p - a.p);
+
+  habitItems.forEach(({ name, p: hp, extra }) => {
+    const fc = fillCls(hp);
+    const tc = txtCls(hp);
+    html += `
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-label">${name}</span>
+          <span class="stat-bar-pct ${tc}">${hp}%${extra ? ' · ' + extra : ''}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill ${fc}" style="width:${hp}%"></div></div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  document.getElementById('statsContent').innerHTML = html;
+}
+
+// ============================================================
 // INIT
 // ============================================================
 function init() {
   const today = new Date();
   currentYear = today.getFullYear();
   currentMonth = today.getMonth();
+  quranYear = today.getFullYear();
+  quranMonth = today.getMonth();
   document.getElementById('yearDisplay').textContent = currentYear;
   document.getElementById('dayDateInput').value = todayStr();
   loadAllData();
+  loadQuranData();
   loadDay();
 }
 
